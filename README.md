@@ -1,27 +1,35 @@
-# Inter-container communication on the same network 🐋
+## 1\. Create a network 🕸️
 
-## 1. Create a network 🕸️
 ```bash
 docker network create my-net
 ```
+
 Always replace `my-net` with a network name of your choice.
 
-## 2. Setup containers🚀
+## 2\. Setup containers🚀
+
 ### Database (postgres)
-Pull the latest image form the docker hub.
+
+Pull the latest image from the docker hub.
+
 ```bash
 docker pull postgres
 ```
 
 Running the image as a container.
-```
+
+```bash
 docker run -dit --network=my-net --name=db-container -e POSTGRES_PASSWORD=abc123 postgres
 ```
-Replace:
-	1. `db-container` with database container name of your choice.
-	2. `abc123` with a password for postgres.
 
-*Enter dummy data into database*
+Replace:
+
+1\. `db-container` with the database container name of your choice.
+
+2\. `abc123` with a password for postgres.
+
+*Enter dummy data into the database*
+
 ```sql
 CREATE TABLE COMPANY(
    ID INT PRIMARY KEY     NOT NULL,
@@ -35,8 +43,11 @@ INSERT INTO COMPANY (ID,NAME,AGE) VALUES (1, 'Nick', 29);
 ```
 
 ### Server (FastAPI)
+
 #### Server code
-###### main.py
+
+###### [main.py](http://main.py)
+
 ```python
 # main.py
 from fastapi import FastAPI
@@ -54,9 +65,11 @@ def get_company():
     company = cursor.fetchall()
     return company
 ```
+
 Execute the SQL query of your choice as per the available data in the postgres database.
 
-###### database.py
+###### [database.py](http://database.py)
+
 ```python
 # database.py
 import psycopg
@@ -65,12 +78,14 @@ import psycopg
 conn = psycopg.connect("dbname='postgres' user='postgres' host='db' password='abc123'")
 cursor = conn.cursor()
 ```
-Here:\
-`dbname='postgres'` & `user='postgres'`: postgres is the default database self created\
-`host='db'`: **db** is the database container name on the same network\
+
+Here:  
+`dbname='postgres'` & `user='postgres'`: postgres is the default database self-created  
+`host='db'`: **db** is the database container name on the same network  
 Use your password instead of `abc123`
 
 ###### requirements.txt
+
 ```python
 # requirements.txt
 anyio==3.6.2
@@ -89,7 +104,9 @@ uvicorn==0.22.0
 ```
 
 ###### Dockerfile
-Build the docker image form the `Dockerfile`.
+
+Build the docker image from the `Dockerfile`.
+
 ```docker
 # FROM python:3.11
 FROM python:3.11.4-alpine3.18
@@ -108,41 +125,48 @@ COPY ./app /code/app
 
 # 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
-
 ```
 
-###### Build and Run docker container
+###### Build and Run the docker container
+
 ```bash
-docker build -t server-image . 
+docker build -t server-image .
 ```
+
 Replace `server-image` with server image name of your choice.
 
 Running the image as a container.
+
 ```bash
 docker run -dit --network=my-net --name=server-container server-image
 ```
-Replace:\
-	1. `server-container` with server container name of your choice.\
-	2. `server-image` with server name you choose.
 
-## 3. Ensure both the containers are in the same name network after they are run
+Replace:  
+1\. `server-container` with server container name of your choice.  
+2\. `server-image` with server name you choose.
+
+## 3\. Ensure both the containers are in the same name network after they are run
+
 ```bash
 docker network inspect my-net
 ```
 
 ## Extras
-Check log of a container
+
+Check logs of a container
+
 ```bash
 docker logs container-id
 ```
 
-Get shell access of a container
+Get shell access to a container
+
 ```bash
 docker exec -it container-id bash
 ```
 
 GET request using curl
+
 ```bash
 curl 127.0.0.1:8000/company
 ```
-
